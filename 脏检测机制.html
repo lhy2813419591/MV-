@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>脏检测机制</title>
+    <meta name="Description" content=""/>
+    <meta name="Author" content="lhy"/>
+</head>
+<body>
+<input type="text" id="input" l-event="value" l-bind = "value">
+<span id="el" l-event="text" l-bind = "value"></span>
+
+<script>
+    // 脏数据循环检测
+    function digest(ele){
+      // 扫描带节点的属性
+      for(let i = 0,len = ele.length; i<len; i++){
+        let elem = ele[i]; // 正在被遍历的元素
+        // 遍历该元素的特性节点，搜索带指令的节点
+        for (let j = 0,len1 = elem.attributes.length; j < len1; j++){
+          let attr = elem.attributes[j];
+          if(attr.nodeName.indexOf('l-event')>=0){
+            // 获取绑定的值
+            let dataKey = elem.getAttribute('l-bind') || undefined;
+            // 进行脏数据检测，如果数据改变则渲染数据
+            if(elem.directive[attr.nodeValue] !== data[dataKey]){
+              directive[attr.nodeValue].call(elem,data[dataKey]);
+              elem.directive[attr.nodeValue] = data[dataKey];
+            }
+          }
+        }
+      }
+    }
+
+    // 数据监听
+    function $digest(value){
+      let list = document.querySelectorAll('[l-bind='+value+']'); // 获取监听了该数据的元素
+      digest(list);
+    }
+
+    // 扫描带指令的节点,为其创建directive属性
+    function scan(ele){
+      for(let elem of ele){
+        elem.directive = [];
+      }
+    }
+
+    // 获取元素
+    let elements = [document.getElementById('input'),document.getElementById('el')];
+    // 定义数据
+    let data = {
+      value: 'hello'
+    };
+    // 定义指令
+    let directive = {
+      text(text){// 改变元素内容
+        this.innerText = text;
+      },
+      value(val){// 设置元素的value特性
+        this.setAttribute('value',val);
+      }
+    };
+
+    // 绑定数据监听函数,对于input等表单元素可以使用oninput等事件来监听数据改变
+    if(document.addEventListener){// 对input绑定监听事件
+      elements[0].addEventListener('keyup',function (e) {
+        data.value = e.target.value;
+        $digest(e.target.getAttribute('l-bind'));
+      },false)
+    }else{// 兼容IE
+      elements[0].attachEvent('onkeyup',function (e) {
+        data.value = e.target.value;
+        $digest(e.target.getAttribute('l-bind'));
+      },false)
+    }
+
+    // 初始化
+    scan(elements);
+</script>
+</body>
+</html>

@@ -7,6 +7,65 @@
     <meta name="Author" content="lhy"/>
 </head>
 <body>
-
+<input type="text" id="input" l-value="value">
+<span id="el" l-text="value"></span>
 </body>
+
+<script>
+    function scan() {// 扫描所有元素，并对有指令的元素的数据进行更新
+      // 扫描带指令的特性
+      for(let ele of elements){
+        if(ele.directive){ // 如果该元素已添加了指令集合
+          for(let direct of ele.directive){
+            directive[direct].call(ele,data[ele.directive_value[ele.directive.indexOf(direct)]])
+          }
+        }else{ // 没有指令集合创建并添加
+          ele.directive = [];// 为每个元素创建directive特性，用以保存该元素的指令
+          ele.directive_value = []; // 保存每个指令带的值
+          for(let attr of ele.attributes){// 扫描html元素的所有特性(id src type l-*)
+            if(attr.nodeName.indexOf('l-')>=0){
+              let dirName = attr.nodeName.slice(2);
+              // 调用指令执行相应操作
+              directive[dirName].call(ele,data[attr.nodeValue]); // 改变this指向 使其指向当前正被遍历的元素
+              ele.directive.push(dirName); // 将指令操作存入directive
+              ele.directive_value.push(attr.nodeValue)
+            }
+          }
+        }
+      }
+    }
+
+    function ViewModelSet(key,value){ // 数据改变后扫描节点
+      data[key] = value; // 更新数据
+      scan(); // 扫描 将更新后的数据渲染到视图
+    }
+
+    let elements = [document.getElementById('el'),document.getElementById('input')];
+    let data = {
+      value:'hello'
+    };
+    // 定义指令集，即规定对应指令所要执行的操作
+    let directive = {
+      text:function (text) {
+        this.innerText = text;
+      },
+      value:function (value) {
+        this.setAttribute('value',value);
+      }
+    };
+
+    // 绑定数据监听函数,对于input等表单元素可以使用oninput等事件来监听数据改变
+    if(document.addEventListener){// 对input绑定监听事件
+      elements[1].addEventListener('keyup',function (e) {// 当键盘抬起就更新ViewModel数据
+        ViewModelSet('value',e.target.value);
+      },false)
+    }else{// 兼容IE
+        elements[1].attachEvent('onkeyup',function (e) {
+          ViewModelSet('value',e.target.value);
+        },false)
+    }
+
+    // 初始化数据
+    scan();
+</script>
 </html>
