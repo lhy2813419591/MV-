@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>ES6_proxy</title>
+    <meta name="Description" content=""/>
+    <meta name="Author" content="lhy"/>
+</head>
+<body>
+<input type="text" id="input" l-value="value">
+<span id="el" l-text="value"></span>
+
+<script>
+  'use strict';
+
+  function scan(){
+    // 扫描带指令的元素节点
+    for(let elem of elements){
+      for(let attr of elem.attributes){
+        if(attr.nodeName.indexOf('l-')>=0){
+          directive[attr.nodeName.slice(2)].call(elem, data[attr.nodeValue]);
+        }
+      }
+    }
+  }
+
+  let elements = [document.getElementById('input'),document.getElementById('el')];// 获取元素
+  // 定义指令
+  let directive = {
+    text(str){
+      this.innerText = str;
+    },
+    value(str){
+      this.setAttribute('value',str);
+    }
+  };
+  let data = new Proxy({},{
+    get(target, key , receiver){
+        return target.value;
+    },
+    set(target, key , value, receiver){
+      target.value = value;
+      scan();
+      return target.value;
+    }
+  });
+
+
+  // 绑定数据监听函数,对于input等表单元素可以使用oninput等事件来监听数据改变
+  if(document.addEventListener){// 对input绑定监听事件
+    elements[0].addEventListener('keyup',function (e) {
+      data.value=e.target.value;
+    },false)
+  }else{// 兼容IE
+    elements[0].attachEvent('onkeyup',function (e) {
+      data.value=e.target.value;
+    },false)
+  }
+
+  // 初始化
+  data['value'] = 'hello';
+  scan();
+</script>
+</body>
+</html>
